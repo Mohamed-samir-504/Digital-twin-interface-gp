@@ -1,0 +1,45 @@
+[
+ {
+  "hid":1,
+  "sid":"untitled",
+  "esid":"",
+  "parent":0,
+  "children":[
+  ],
+  "name":"untitled",
+  "fullname":"untitled",
+  "label":"untitled",
+  "className":"Simulink.BlockDiagram",
+  "icon":"SimulinkModelIcon_icon",
+  "svg":"support/slwebview_files/untitled_d.svg",
+  "thumbnail":"support/slwebview_files/untitled_d.png",
+  "elements":[
+   {
+    "sid":"untitled:14",
+    "rsid":"untitled:14",
+    "name":"SCI Receive",
+    "label":"SCI Receive",
+    "className":"Simulink.SFunction",
+    "icon":"BlockIcon_icon"
+   },
+   {
+    "sid":"untitled:15",
+    "rsid":"untitled:15",
+    "name":"SCI Transmit",
+    "label":"SCI Transmit",
+    "className":"Simulink.SFunction",
+    "icon":"BlockIcon_icon"
+   },
+   {
+    "sid":"untitled:14#out:1",
+    "rsid":"untitled:14#out:1",
+    "name":"",
+    "label":"",
+    "className":"Simulink.Line",
+    "icon":"LineIcon_icon"
+   }
+  ],
+  "sysViewURL":"support/slwebview_files/untitled_d.json",
+  "sameAsElement":false
+ }
+]
