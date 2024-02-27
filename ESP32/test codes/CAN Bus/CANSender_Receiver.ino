@@ -1,7 +1,7 @@
 #include <CAN.h>
 
-#define TX_GPIO_NUM   4  // Connects to CTX
-#define RX_GPIO_NUM   0  // Connects to CRX
+#define TX_GPIO_NUM   5  // Connects to CTX
+#define RX_GPIO_NUM   4  // Connects to CRX
 
 void setup() {
   Serial.begin (115200);
