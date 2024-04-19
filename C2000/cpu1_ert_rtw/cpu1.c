@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'cpu1'.
  *
- * Model version                  : 5.1
+ * Model version                  : 5.3
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Thu Mar 28 15:14:39 2024
+ * C/C++ source code generated on : Thu Apr 18 15:00:04 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -33,6 +33,11 @@
 #define cpu1_IN_state13                (7U)
 #define cpu1_IN_state8                 (8U)
 #define cpu1_IN_state9                 (9U)
+
+#define MSG_DATA_LENGTH    0   // "Don't care" for a Receive mailbox
+#define RX_MSG_OBJ_ID      1   // Use mailbox 1
+#define TX_MSG_OBJ_ID      2
+
 
 /* Block signals (default storage) */
 B_cpu1_T cpu1_B;
@@ -1515,7 +1520,7 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
     ucTXMsgData[5] = (cpu1_B.BytePack[2] >> 8);
     ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
     ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
-    CAN_sendMessage(CANB_BASE, 2, 8, (uint16_T*)ucTXMsgData);
+    CAN_sendMessage(CANB_BASE, 2, 8, ucTXMsgData);
   }
 
   /* RateTransition: '<Root>/RT' */
@@ -2189,21 +2194,48 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
     uint16_T isHeadReceived = 1U;
 
     //get data as uint16 in recBuff
-    uint16_T recbuff[4];
-    for (i = 0; i < 4; i++) {
-      recbuff[i] = 0U;
+    unsigned char recbuff[8];
+    for (i = 0; i < 8; i++) {
+      recbuff[i] = 0;
     }
 
     errFlg = NOERROR;
 
     /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
-    if (isHeadReceived) {
-      errFlg = scia_rcv(recbuff, 8, 4);
-      asm(" NOP");
-      if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
-        memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
-      }
-    }
+//    if (isHeadReceived) {
+    //  errFlg = scia_rcv(recbuff, 8, 4);
+//      asm(" NOP");
+//      if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
+//        memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
+//      }
+//    }
+//xyzz
+    if(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_RXOK)) == CAN_ES_RXOK)
+                {
+                    //
+                    // Get the received message
+                    //
+
+        //00000000 1111 1111
+                    CAN_readMessage(CANB_BASE, RX_MSG_OBJ_ID, (uint16_T*)recbuff);
+
+                    //cpu1_B.SCIReceive[0] = ((unsigned int)(recbuff[0]&0xFF)) | ( (unsigned int)(recbuff[1] & 0xFF) << 8 ) | ((unsigned int)(recbuff[2]&0xFF) << 16) | ((unsigned int)(recbuff[3]&0xFF) << 24);
+                    //cpu1_B.SCIReceive[1] = ((unsigned int)(recbuff[4]&0xFF)) | ( (unsigned int)(recbuff[5]&0xFF) << 8 )| ( (unsigned int)(recbuff[6]&0xFF) << 16 ) | ((unsigned int)(recbuff[7]&0xFF) << 24);
+
+
+
+
+                    memcpy(&cpu1_B.SCIReceive[0], (unsigned char)recbuff,8);
+
+                    int x;
+
+               //     CAN_sendMessage(CANB_BASE, 2, 8, recbuff);
+//
+//                     while(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_TXOK)) !=  CAN_ES_TXOK)
+//                       {
+//                       }
+               }
+
   }
 
   /* MATLABSystem: '<Root>/Moving Average' */
@@ -2411,7 +2443,6 @@ void cpu1_initialize(void)
     EALLOW;
     GpioCtrlRegs.GPAMUX1.all &= 0xFFFF03FFU;
     GpioCtrlRegs.GPADIR.all &= 0xFFFFFF1FU;
-    GpioCtrlRegs.GPAPUD.all &=  ~(0x0000FFE0);
     EDIS;
 
     /* Start for S-Function (c280xgpio_di): '<S7>/Digital Input4' */
@@ -2434,6 +2465,11 @@ void cpu1_initialize(void)
     /* Start for S-Function (c280xcanxmt): '<Root>/eCAN Transmit' */
     CAN_setupMessageObject(CANB_BASE, 2, 0x1C7, CAN_MSG_FRAME_STD,
       CAN_MSG_OBJ_TYPE_TX, 0, CAN_MSG_OBJ_NO_FLAGS, 8);
+
+    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ_ID, 0x4e9,
+                                   CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0u,
+                                   CAN_MSG_OBJ_USE_ID_FILTER, MSG_DATA_LENGTH);
+
 
     /* Start for RateTransition: '<Root>/RT' */
     cpu1_B.RT_l = cpu1_P.RT_InitialCondition;

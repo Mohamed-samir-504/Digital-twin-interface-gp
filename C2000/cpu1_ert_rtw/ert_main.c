@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'cpu1'.
  *
- * Model version                  : 5.1
+ * Model version                  : 5.3
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Thu Mar 28 15:14:39 2024
+ * C/C++ source code generated on : Thu Apr 18 15:00:04 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -85,7 +85,7 @@ volatile boolean_T stopRequested;
 volatile boolean_T runModel;
 int main(void)
 {
-  float modelBaseRate = 0.1;
+  float modelBaseRate = 0.001;
   float systemClock = 200;
 
   /* Initialize variables */

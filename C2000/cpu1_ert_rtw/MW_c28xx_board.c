@@ -199,7 +199,6 @@ void init_board (void)
    *    Level of CAN bus: Sample_one_time
    *    Synchronization jump width = 2 */
   init_eCAN_B (20, 5, 4, 1, 2, 1);
-  
   init_SCI();
   init_SCI_GPIO();
   InitCpuTimers();
