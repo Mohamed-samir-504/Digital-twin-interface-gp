@@ -2221,13 +2221,14 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
 
                     //cpu1_B.SCIReceive[0] = ((unsigned int)(recbuff[0]&0xFF)) | ( (unsigned int)(recbuff[1] & 0xFF) << 8 ) | ((unsigned int)(recbuff[2]&0xFF) << 16) | ((unsigned int)(recbuff[3]&0xFF) << 24);
                     //cpu1_B.SCIReceive[1] = ((unsigned int)(recbuff[4]&0xFF)) | ( (unsigned int)(recbuff[5]&0xFF) << 8 )| ( (unsigned int)(recbuff[6]&0xFF) << 16 ) | ((unsigned int)(recbuff[7]&0xFF) << 24);
+                    cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
+                    cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
 
 
 
+                 //   memcpy(&cpu1_B.SCIReceive[0], (unsigned char)recbuff,8);
 
-                    memcpy(&cpu1_B.SCIReceive[0], (unsigned char)recbuff,8);
-
-                    int x;
+                  //  int x;
 
                //     CAN_sendMessage(CANB_BASE, 2, 8, recbuff);
 //
@@ -2266,14 +2267,14 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
   cpu1_B.MovingAverage = 0.0F;
 
   /* MATLABSystem: '<Root>/Moving Average' */
-  csum += cpu1_B.SCIReceive[0];
+  csum += cpu1_B.SCIReceive[0].f;
   if (modValueRev == 0.0F) {
     /* MATLABSystem: '<Root>/Moving Average' */
     cpu1_B.MovingAverage = (csum + csumrev) / 2.0F;
   }
 
   obj->pCumSum = 0.0F;
-  obj->pCumSumRev = cpu1_B.SCIReceive[0];
+  obj->pCumSumRev = cpu1_B.SCIReceive[0].f;
   obj->pCumRevIndex = 1.0F;
   if (modValueRev > 0.0F) {
     obj->pModValueRev = modValueRev - 1.0F;
@@ -2294,7 +2295,7 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
 
   csum = cpu1_DW.obj_h.pMID.pBuf[(int16_T)cpu1_DW.obj_h.pMID.pIdx - 1];
   cpu1_DW.obj_h.pMID.pBuf[(int16_T)cpu1_DW.obj_h.pMID.pIdx - 1] =
-    cpu1_B.SCIReceive[1];
+    cpu1_B.SCIReceive[1].f;
   csumrev = cpu1_DW.obj_h.pMID.pPos[(int16_T)cpu1_DW.obj_h.pMID.pIdx - 1];
   cpu1_DW.obj_h.pMID.pIdx++;
   if (cpu1_DW.obj_h.pMID.pWinLen + 1.0F == cpu1_DW.obj_h.pMID.pIdx) {
@@ -2302,7 +2303,7 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
   }
 
   if (csumrev > cpu1_DW.obj_h.pMID.pMidHeap) {
-    if (csum < cpu1_B.SCIReceive[1]) {
+    if (csum < cpu1_B.SCIReceive[1].f) {
       csum = csumrev - cpu1_DW.obj_h.pMID.pMidHeap;
       c_MedianFilterCG_trickleDownMin(&cpu1_DW.obj_h.pMID, csum * 2.0F);
     } else {
@@ -2334,7 +2335,7 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
       }
     }
   } else if (csumrev < cpu1_DW.obj_h.pMID.pMidHeap) {
-    if (cpu1_B.SCIReceive[1] < csum) {
+    if (cpu1_B.SCIReceive[1].f < csum) {
       csum = csumrev - cpu1_DW.obj_h.pMID.pMidHeap;
       c_MedianFilterCG_trickleDownMax(&cpu1_DW.obj_h.pMID, csum * 2.0F);
     } else {
@@ -2478,8 +2479,8 @@ void cpu1_initialize(void)
 
     /* Initialize out port */
     {
-      cpu1_B.SCIReceive[0] = (real32_T)0.0;
-      cpu1_B.SCIReceive[1] = (real32_T)0.0;
+      cpu1_B.SCIReceive[0].f = (real32_T)0.0;
+      cpu1_B.SCIReceive[1].f = (real32_T)0.0;
     }
 
     /* Start for S-Function (c28xipc_tx): '<Root>/IPC Transmit' */

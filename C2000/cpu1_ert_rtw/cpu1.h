@@ -72,7 +72,11 @@ typedef struct {
   real32_T Gain9;                      /* '<S2>/Gain9' */
   real32_T IPCReceive_o1;              /* '<Root>/IPC Receive' */
   real32_T RT_l;                       /* '<Root>/RT' */
-  real32_T SCIReceive[2];              /* '<Root>/SCI Receive' */
+  union type_uni
+  {
+      float f;
+      uint32_t i;
+  } SCIReceive[2];              /* '<Root>/SCI Receive' */
   real32_T MovingAverage;              /* '<Root>/Moving Average' */
   int32_T DigitalInput1[3];            /* '<S7>/Digital Input1' */
   int32_T DigitalInput4[6];            /* '<S7>/Digital Input4' */
