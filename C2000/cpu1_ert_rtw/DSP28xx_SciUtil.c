@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'cpu1'.
  *
- * Model version                  : 5.3
+ * Model version                  : 5.0
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Thu Apr 18 15:00:04 2024
+ * C/C++ source code generated on : Wed Apr 24 14:24:51 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -14,6 +14,32 @@
  */
 
 #include "DSP28xx_SciUtil.h"
+
+/* Transmit character(s) from the SCIa*/
+int16_T scia_xmit(unsigned char* pmsg, int16_T msglen, int16_T typeLen)
+/*Blocking mode*/
+{
+  int16_T i,j;
+  if (typeLen==1) {
+    for (i = 0; i < msglen; i++) {
+      while (SciaRegs.SCIFFTX.bit.TXFFST == 16U) {
+      }                                /* The buffer is full;*/
+
+      SciaRegs.SCITXBUF.bit.TXDT = pmsg[i];
+    }
+  } else {
+    for (i = 0; i < (msglen/2); i++) {
+      for (j = 0; j<=1; j++) {
+        while (SciaRegs.SCIFFTX.bit.TXFFST == 16U) {
+        }                              /* The buffer is full;*/
+
+        SciaRegs.SCITXBUF.bit.TXDT = pmsg[i]>>(8*j);
+      }
+    }
+  }
+
+  return 0;
+}
 
 /*
  * Receive character(s) from the SCIa
@@ -30,20 +56,20 @@ int16_T scia_rcv(uint16_T *rcvBuff, int16_T buffLen, int16_T typeLen)
   int16_T errorVal = NOERROR;
   uint16_T byte_cnt = 0;
   for (i = 0; i<buffLen; i++) {
-    if (SciaRegs.SCIFFRX.bit.RXFFST > 0U) {/*Check if receive FIFO has data*/
-      if (typeLen > 1) {
-        if (byte_cnt == 0U) {
-          rcvBuff[i/2] = (SciaRegs.SCIRXBUF.all & 0x00FFU);
-          byte_cnt = 1U;
-        } else {
-          rcvBuff[i/2] |= SciaRegs.SCIRXBUF.all << 8;
-          byte_cnt = 0U;
-        }
+    while (SciaRegs.SCIFFRX.bit.RXFFST == 0U) {
+      /* wait until data received */
+    }
+
+    if (typeLen > 1) {
+      if (byte_cnt == 0U) {
+        rcvBuff[i/2] = (SciaRegs.SCIRXBUF.all & 0x00FFU);
+        byte_cnt = 1U;
       } else {
-        rcvBuff[i] = SciaRegs.SCIRXBUF.all;
+        rcvBuff[i/2] |= SciaRegs.SCIRXBUF.all << 8;
+        byte_cnt = 0U;
       }
     } else {
-      return DATANOTAVAILABLE;
+      rcvBuff[i] = SciaRegs.SCIRXBUF.all;
     }
 
     //check flags

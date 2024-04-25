@@ -85,7 +85,7 @@ volatile boolean_T stopRequested;
 volatile boolean_T runModel;
 int main(void)
 {
-  float modelBaseRate = 0.001;
+  float modelBaseRate = 0.001; //1ms
   float systemClock = 200;
 
   /* Initialize variables */

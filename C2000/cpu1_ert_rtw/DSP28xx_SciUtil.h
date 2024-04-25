@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'cpu1'.
  *
- * Model version                  : 5.3
+ * Model version                  : 5.0
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Thu Apr 18 15:00:04 2024
+ * C/C++ source code generated on : Wed Apr 24 14:24:51 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -30,6 +30,7 @@
 #define PARTIALDATA                    8                         /* Partial Data available */
 
 extern int16_T checkSCITransmitInprogress;
+int16_T scia_xmit(unsigned char* pmsg, int16_T msglen, int16_T typeLen);
 int16_T scia_rcv(uint16_T *rcvBuff, int16_T buffLen, int16_T typeLen);
 int16_T scia_rcv_varsize(uint16_T *rcvBuff, int16_T buffLen, int16_T typeLen,
   unsigned char *expTail, int16_T tailsize, int16_T *rcvBufferLen);
