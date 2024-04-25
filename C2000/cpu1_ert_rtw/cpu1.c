@@ -33,11 +33,12 @@
 #define cpu1_IN_state13                (7U)
 #define cpu1_IN_state8                 (8U)
 #define cpu1_IN_state9                 (9U)
-
+#define CAN_BUS_EN 
 #define MSG_DATA_LENGTH    0   // "Don't care" for a Receive mailbox
 #define RX_MSG_OBJ_ID      1   // Use mailbox 1
 #define TX_MSG_OBJ_ID      2
 
+uint32_T counter =0;
 
 /* Block signals (default storage) */
 B_cpu1_T cpu1_B;
@@ -1511,7 +1512,11 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
 
   /* S-Function (c280xcanxmt): '<Root>/eCAN Transmit' */
   {
-    unsigned char ucTXMsgData[8];
+#ifdef CAN_BUS_EN
+      counter++;
+      uint8_t ucTXMsgData[8];
+    if(counter%100==0)
+       {
     ucTXMsgData[0] = (cpu1_B.BytePack[0] & 0xFF);
     ucTXMsgData[1] = (cpu1_B.BytePack[0] >> 8);
     ucTXMsgData[2] = (cpu1_B.BytePack[1] & 0xFF);
@@ -1520,7 +1525,11 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
     ucTXMsgData[5] = (cpu1_B.BytePack[2] >> 8);
     ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
     ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
-    CAN_sendMessage(CANB_BASE, 2, 8, ucTXMsgData);
+
+   CAN_sendMessage(CANB_BASE, 2, 8,(uint16_t *)ucTXMsgData);
+
+       }
+#endif
   }
 
   /* RateTransition: '<Root>/RT' */
@@ -2187,57 +2196,29 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
   boolean_T exitg1;
   boolean_T flag;
 
+
   /* S-Function (c28xsci_rx): '<Root>/SCI Receive' */
   {
-    int16_T i;
-    int16_T errFlg = NOERROR;
-    uint16_T isHeadReceived = 1U;
-
-    //get data as uint16 in recBuff
-    unsigned char recbuff[8];
-    for (i = 0; i < 8; i++) {
-      recbuff[i] = 0;
-    }
-
-    errFlg = NOERROR;
+#ifdef CAN_BUS_EN
 
     /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
-//    if (isHeadReceived) {
-    //  errFlg = scia_rcv(recbuff, 8, 4);
-//      asm(" NOP");
-//      if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
-//        memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
-//      }
-//    }
-//xyzz
+
     if(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_RXOK)) == CAN_ES_RXOK)
                 {
-                    //
-                    // Get the received message
-                    //
-
-        //00000000 1111 1111
+                    //get data as uint16 in recBuff
+                    uint8_t recbuff[8];
+                    int16_T i;
+                    for (i = 0; i < 8; i++) {
+                      recbuff[i] = 0;
+                    }
                     CAN_readMessage(CANB_BASE, RX_MSG_OBJ_ID, (uint16_T*)recbuff);
-
-                    //cpu1_B.SCIReceive[0] = ((unsigned int)(recbuff[0]&0xFF)) | ( (unsigned int)(recbuff[1] & 0xFF) << 8 ) | ((unsigned int)(recbuff[2]&0xFF) << 16) | ((unsigned int)(recbuff[3]&0xFF) << 24);
-                    //cpu1_B.SCIReceive[1] = ((unsigned int)(recbuff[4]&0xFF)) | ( (unsigned int)(recbuff[5]&0xFF) << 8 )| ( (unsigned int)(recbuff[6]&0xFF) << 16 ) | ((unsigned int)(recbuff[7]&0xFF) << 24);
                     cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
                     cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
 
-
-
-                 //   memcpy(&cpu1_B.SCIReceive[0], (unsigned char)recbuff,8);
-
-                  //  int x;
-
-               //     CAN_sendMessage(CANB_BASE, 2, 8, recbuff);
-//
-//                     while(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_TXOK)) !=  CAN_ES_TXOK)
-//                       {
-//                       }
                }
-
+#endif
   }
+
 
   /* MATLABSystem: '<Root>/Moving Average' */
   if (cpu1_DW.obj_g.TunablePropsChanged) {
@@ -2442,14 +2423,20 @@ void cpu1_initialize(void)
 
     /* Start for S-Function (c280xgpio_di): '<S7>/Digital Input1' */
     EALLOW;
+    //GpioDataRegs.GPADAT.all = 0U;
     GpioCtrlRegs.GPAMUX1.all &= 0xFFFF03FFU;
-    GpioCtrlRegs.GPADIR.all &= 0xFFFFFF1FU;
+    GpioCtrlRegs.GPADIR.all &= ~0xFFFFFF1FU;
+
+
+   // GpioCtrlRegs.GPAPUD.all &= ~(0xFFFFFF0F); // 10010110
+
     EDIS;
 
     /* Start for S-Function (c280xgpio_di): '<S7>/Digital Input4' */
     EALLOW;
     GpioCtrlRegs.GPAMUX1.all &= 0xF00FFFFU;
     GpioCtrlRegs.GPADIR.all &= 0xFFFF30FFU;
+
     EDIS;
 
     /* Start for S-Function (c2802xadc): '<S7>/ADC2' */
