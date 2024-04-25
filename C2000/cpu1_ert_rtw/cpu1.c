@@ -1525,7 +1525,26 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
     ucTXMsgData[5] = (cpu1_B.BytePack[2] >> 8);
     ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
     ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
-    CAN_sendMessage(CANB_BASE, 2, 8, ucTXMsgData);
+
+   CAN_sendMessage(CANB_BASE, 2, 8,(uint16_t *)ucTXMsgData);
+
+       }
+#endif
+
+
+#ifdef SCI_EN
+
+      if (checkSCITransmitInprogress != 1) {
+      checkSCITransmitInprogress = 1;
+      int16_T errFlgHeader = NOERROR;
+      int16_T errFlgData = NOERROR;
+      int16_T errFlgTail = NOERROR;
+      errFlgData = scia_xmit((unsigned char*)&cpu1_B.BytePack[0], 8, 2);
+      checkSCITransmitInprogress = 0;
+    }
+
+#endif
+
   }
 
   /* RateTransition: '<Root>/RT' */
@@ -2211,20 +2230,34 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
                     cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
                     cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
 
-
-
-                 //   memcpy(&cpu1_B.SCIReceive[0], (unsigned char)recbuff,8);
-
-                  //  int x;
-
-               //     CAN_sendMessage(CANB_BASE, 2, 8, recbuff);
-//
-//                     while(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_TXOK)) !=  CAN_ES_TXOK)
-//                       {
-//                       }
                }
+#endif
+
+#ifdef SCI_EN
+    int16_T i;
+    int16_T errFlg = NOERROR;
+    uint16_T isHeadReceived = 1U;
+
+    //get data as uint16 in recBuff
+    uint16_T recbuff[4];
+    for (i = 0; i < 4; i++) {
+      recbuff[i] = 0U;
+    }
+
+    errFlg = NOERROR;
+
+    /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
+    if (isHeadReceived) {
+      errFlg = scia_rcv(recbuff, 8, 4);
+      asm(" NOP");
+      if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
+        memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
+      }
+    }
+  #endif
 
   }
+
 
   /* MATLABSystem: '<Root>/Moving Average' */
   if (cpu1_DW.obj_g.TunablePropsChanged) {
