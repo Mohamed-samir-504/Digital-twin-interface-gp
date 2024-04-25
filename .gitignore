@@ -285,4 +285,7 @@ C2000/slprj/ert/cpu1/tmwinternal/BlockTraceInfo.mat
 C2000/slprj/ert/cpu1/tmwinternal/CompileInfo.xml
 C2000/slprj/ert/cpu1/tmwinternal/minfo.mat
 C2000/cpu1.slx
+<<<<<<< HEAD
 .vscode/settings.json
+=======
+>>>>>>> 10e3e872d19ae9c7b32ad0ef059009603ec1315f
