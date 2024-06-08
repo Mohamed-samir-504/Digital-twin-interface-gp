@@ -1,0 +1,18 @@
+mqtt_client:
+  ros__parameters:
+    broker:
+      host: 192.168.19.1
+      port: 1883
+    bridge:
+      ros2mqtt:
+        ros_topics: 
+          - /subscribe/primitive
+        /subscribe/primitive:
+          mqtt_topic: send_to_ros
+          primitive: true
+      mqtt2ros:
+        mqtt_topics:
+          - send_to_ros
+        send_to_ros:
+          ros_topic: subscribe
+          primitive: true
