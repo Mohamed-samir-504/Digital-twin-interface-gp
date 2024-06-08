@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'cpu1'.
  *
- * Model version                  : 5.3
+ * Model version                  : 5.0
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Thu Apr 18 15:00:04 2024
+ * C/C++ source code generated on : Thu Jun  6 14:27:47 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -99,7 +99,7 @@ P_cpu1_T cpu1_P = {
   /* Computed Parameter: Constant_Value_f
    * Referenced by: '<S7>/Constant'
    */
-  2645.0F,
+  2600.0F,
 
   /* Computed Parameter: Constant1_Value_g
    * Referenced by: '<S7>/Constant1'

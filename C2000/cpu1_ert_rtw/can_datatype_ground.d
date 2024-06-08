@@ -1,8 +1,8 @@
-can_datatype_ground.obj: D:/GP_repo/Digital-twin-interface-gp/C2000/cpu1_ert_rtw/can_datatype_ground.c
-can_datatype_ground.obj: D:/matlab/toolbox/shared/can/src/scanutil/can_message.h
-can_datatype_ground.obj: D:/GP_repo/Digital-twin-interface-gp/C2000/cpu1_ert_rtw/rtwtypes.h
+can_datatype_ground.obj: C:/Users/midot/Desktop/can/cpu1_ert_rtw/can_datatype_ground.c
+can_datatype_ground.obj: C:/PROGRA~1/MATLAB/R2022b/toolbox/shared/can/src/scanutil/can_message.h
+can_datatype_ground.obj: C:/Users/midot/Desktop/can/cpu1_ert_rtw/rtwtypes.h
 
-D:/GP_repo/Digital-twin-interface-gp/C2000/cpu1_ert_rtw/can_datatype_ground.c:
-D:/matlab/toolbox/shared/can/src/scanutil/can_message.h:
-D:/GP_repo/Digital-twin-interface-gp/C2000/cpu1_ert_rtw/rtwtypes.h:
+C:/Users/midot/Desktop/can/cpu1_ert_rtw/can_datatype_ground.c:
+C:/PROGRA~1/MATLAB/R2022b/toolbox/shared/can/src/scanutil/can_message.h:
+C:/Users/midot/Desktop/can/cpu1_ert_rtw/rtwtypes.h:
 

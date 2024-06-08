@@ -33,12 +33,16 @@
 #define cpu1_IN_state13                (7U)
 #define cpu1_IN_state8                 (8U)
 #define cpu1_IN_state9                 (9U)
-#define CAN_BUS_EN 
+#define CAN_BUS_EN
 #define MSG_DATA_LENGTH    0   // "Don't care" for a Receive mailbox
-#define RX_MSG_OBJ_ID      1   // Use mailbox 1
+#define RX_MSG_OBJ1_ID      1
+#define RX_MSG_OBJ2_ID      2
+   // Use mailbox 1
 #define TX_MSG_OBJ_ID      2
 
-uint32_T counter =0;
+
+uint32_T counter = 0;
+//uint16_T CAN_BUS_ENABLE=0;
 
 /* Block signals (default storage) */
 B_cpu1_T cpu1_B;
@@ -1512,39 +1516,35 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
 
   /* S-Function (c280xcanxmt): '<Root>/eCAN Transmit' */
   {
-#ifdef CAN_BUS_EN
-      counter++;
-      uint8_t ucTXMsgData[8];
-    if(counter%100==0)
-       {
-    ucTXMsgData[0] = (cpu1_B.BytePack[0] & 0xFF);
-    ucTXMsgData[1] = (cpu1_B.BytePack[0] >> 8);
-    ucTXMsgData[2] = (cpu1_B.BytePack[1] & 0xFF);
-    ucTXMsgData[3] = (cpu1_B.BytePack[1] >> 8);
-    ucTXMsgData[4] = (cpu1_B.BytePack[2] & 0xFF);
-    ucTXMsgData[5] = (cpu1_B.BytePack[2] >> 8);
-    ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
-    ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
+      if(GpioDataRegs.GPBDAT.bit.GPIO61){
+          counter++;
+          uint8_t ucTXMsgData[8];
+          if(counter%100==0){
+              ucTXMsgData[0] = (cpu1_B.BytePack[0] & 0xFF);
+              ucTXMsgData[1] = (cpu1_B.BytePack[0] >> 8);
+              ucTXMsgData[2] = (cpu1_B.BytePack[1] & 0xFF);
+              ucTXMsgData[3] = (cpu1_B.BytePack[1] >> 8);
+              ucTXMsgData[4] = (cpu1_B.BytePack[2] & 0xFF);
+              ucTXMsgData[5] = (cpu1_B.BytePack[2] >> 8);
+              ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
+              ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
 
-   CAN_sendMessage(CANB_BASE, 2, 8,(uint16_t *)ucTXMsgData);
-
+              CAN_sendMessage(CANB_BASE, 2, 8,(uint16_t *)ucTXMsgData);
+          }
        }
-#endif
 
 
-#ifdef SCI_EN
+      else if(!GpioDataRegs.GPBDAT.bit.GPIO61){
 
-      if (checkSCITransmitInprogress != 1) {
-      checkSCITransmitInprogress = 1;
-      int16_T errFlgHeader = NOERROR;
-      int16_T errFlgData = NOERROR;
-      int16_T errFlgTail = NOERROR;
-      errFlgData = scia_xmit((unsigned char*)&cpu1_B.BytePack[0], 8, 2);
-      checkSCITransmitInprogress = 0;
-    }
-
-#endif
-
+          if (checkSCITransmitInprogress != 1) {
+              checkSCITransmitInprogress = 1;
+              int16_T errFlgHeader = NOERROR;
+              int16_T errFlgData = NOERROR;
+              int16_T errFlgTail = NOERROR;
+              errFlgData = scia_xmit((unsigned char*)&cpu1_B.BytePack[0], 8, 2);
+              checkSCITransmitInprogress = 0;
+          }
+      }
   }
 
   /* RateTransition: '<Root>/RT' */
@@ -2214,47 +2214,55 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
 
   /* S-Function (c28xsci_rx): '<Root>/SCI Receive' */
   {
-#ifdef CAN_BUS_EN
 
+    if(GpioDataRegs.GPBDAT.bit.GPIO61){
     /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
 
-    if(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_RXOK)) == CAN_ES_RXOK)
-                {
-                    //get data as uint16 in recBuff
-                    uint8_t recbuff[8];
-                    int16_T i;
-                    for (i = 0; i < 8; i++) {
-                      recbuff[i] = 0;
-                    }
-                    CAN_readMessage(CANB_BASE, RX_MSG_OBJ_ID, (uint16_T*)recbuff);
-                    cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
-                    cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
+        if(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_RXOK)) == CAN_ES_RXOK)
+        {
+             //get data as uint16 in recBuff
+             uint8_t recbuff[8];
+             uint32_t speed = 0;
 
-               }
-#endif
+             int16_T i;
+             for (i = 0; i < 8; i++) {
+                  recbuff[i] = 0;
+             }
+             CAN_readMessage(CANB_BASE, RX_MSG_OBJ1_ID, (uint16_T*)recbuff);
 
-#ifdef SCI_EN
-    int16_T i;
-    int16_T errFlg = NOERROR;
-    uint16_T isHeadReceived = 1U;
+             CAN_readMessage(CANB_BASE, RX_MSG_OBJ2_ID, (uint16_T*)speed);
 
-    //get data as uint16 in recBuff
-    uint16_T recbuff[4];
-    for (i = 0; i < 4; i++) {
-      recbuff[i] = 0U;
+
+             cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
+             cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
+
+         }
+
     }
+    else if(!GpioDataRegs.GPBDAT.bit.GPIO61){
+        int16_T i;
+        int16_T errFlg = NOERROR;
+        uint16_T isHeadReceived = 1U;
 
-    errFlg = NOERROR;
+        //get data as uint16 in recBuff
+        uint16_T recbuff[4];
+        for (i = 0; i < 4; i++) {
+            recbuff[i] = 0U;
+        }
 
-    /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
-    if (isHeadReceived) {
-      errFlg = scia_rcv(recbuff, 8, 4);
-      asm(" NOP");
-      if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
-        memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
-      }
+        errFlg = NOERROR;
+
+        /* Receiving data: For uint32 and uint16, rcvBuff will contain uint16 data */
+        if (isHeadReceived) {
+            errFlg = scia_rcv(recbuff, 8, 4);
+            asm(" NOP");
+            if ((errFlg == NOERROR) || (errFlg == PARTIALDATA)) {
+                memcpy( &cpu1_B.SCIReceive[0], recbuff,4);
+
+
+            }
+        }
     }
-  #endif
 
   }
 
@@ -2466,8 +2474,14 @@ void cpu1_initialize(void)
     GpioCtrlRegs.GPAMUX1.all &= 0xFFFF03FFU;
     GpioCtrlRegs.GPADIR.all &= ~0xFFFFFF1FU;
 
+    //for switching between uart and can
 
-   // GpioCtrlRegs.GPAPUD.all &= ~(0xFFFFFF0F); // 10010110
+    //enable pin as gpio (put 00 in bits number 26,27)
+    GpioCtrlRegs.GPBMUX2.all &= 0xF3FFFFFFU;
+    //enable pull up resistor on gpio61
+    GpioCtrlRegs.GPBPUD.bit.GPIO61 = 0;
+    //set gpio61 as input pin
+    GpioCtrlRegs.GPBDIR.bit.GPIO61 = 0;
 
     EDIS;
 
@@ -2475,6 +2489,7 @@ void cpu1_initialize(void)
     EALLOW;
     GpioCtrlRegs.GPAMUX1.all &= 0xF00FFFFU;
     GpioCtrlRegs.GPADIR.all &= 0xFFFF30FFU;
+
 
     EDIS;
 
@@ -2493,9 +2508,14 @@ void cpu1_initialize(void)
     CAN_setupMessageObject(CANB_BASE, 2, 0x1C7, CAN_MSG_FRAME_STD,
       CAN_MSG_OBJ_TYPE_TX, 0, CAN_MSG_OBJ_NO_FLAGS, 8);
 
-    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ_ID, 0x4e9,
+    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ1_ID, 0x4e9,
                                    CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0u,
                                    CAN_MSG_OBJ_USE_ID_FILTER, MSG_DATA_LENGTH);
+
+    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ2_ID, 0xef,
+                                   CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0xffff,
+                                   CAN_MSG_OBJ_USE_ID_FILTER, MSG_DATA_LENGTH);
+
 
 
     /* Start for RateTransition: '<Root>/RT' */
