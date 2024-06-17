@@ -42,6 +42,7 @@
 
 
 uint32_T counter = 0;
+uint16_t speed = 100;
 //uint16_T CAN_BUS_ENABLE=0;
 
 /* Block signals (default storage) */
@@ -1519,7 +1520,8 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
       if(GpioDataRegs.GPBDAT.bit.GPIO61){
           counter++;
           uint8_t ucTXMsgData[8];
-          if(counter%100==0){
+
+          if(counter%speed==0){
               ucTXMsgData[0] = (cpu1_B.BytePack[0] & 0xFF);
               ucTXMsgData[1] = (cpu1_B.BytePack[0] >> 8);
               ucTXMsgData[2] = (cpu1_B.BytePack[1] & 0xFF);
@@ -2222,19 +2224,27 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
         {
              //get data as uint16 in recBuff
              uint8_t recbuff[8];
-             uint32_t speed = 0;
+             uint8_t ratebuff[8];
 
              int16_T i;
              for (i = 0; i < 8; i++) {
                   recbuff[i] = 0;
+                  ratebuff[i]=0;
+
              }
+
              CAN_readMessage(CANB_BASE, RX_MSG_OBJ1_ID, (uint16_T*)recbuff);
 
-             CAN_readMessage(CANB_BASE, RX_MSG_OBJ2_ID, (uint16_T*)speed);
+             CAN_readMessage(CANB_BASE, 3, (uint16_T*)ratebuff);
 
 
-             cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) | (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
-             cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) | (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
+             cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) |
+                     (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
+
+             cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) |
+                     (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
+
+             //speed = (uint32_t)ratebuff[0];
 
          }
 
@@ -2508,12 +2518,14 @@ void cpu1_initialize(void)
     CAN_setupMessageObject(CANB_BASE, 2, 0x1C7, CAN_MSG_FRAME_STD,
       CAN_MSG_OBJ_TYPE_TX, 0, CAN_MSG_OBJ_NO_FLAGS, 8);
 
-    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ1_ID, 0x4e9,
-                                   CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0u,
+    //for receiving steering and speed
+    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ1_ID, 0xA0,
+                                   CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0xFFFF,
                                    CAN_MSG_OBJ_USE_ID_FILTER, MSG_DATA_LENGTH);
 
-    CAN_setupMessageObject(CANB_BASE, RX_MSG_OBJ2_ID, 0xef,
-                                   CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0xffff,
+    //for receiving command to change transmit rate
+   CAN_setupMessageObject(CANB_BASE, 3, 0xEF,
+                                  CAN_MSG_FRAME_STD, CAN_MSG_OBJ_TYPE_RX, 0xFFFF,
                                    CAN_MSG_OBJ_USE_ID_FILTER, MSG_DATA_LENGTH);
 
 
