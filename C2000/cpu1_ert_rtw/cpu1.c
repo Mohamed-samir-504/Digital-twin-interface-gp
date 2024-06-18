@@ -2238,8 +2238,7 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
              cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) |
                      (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
 
-             transmit_rate =  ((((uint32_t)ratebuff[0])) | (((uint32_t)ratebuff[1]) << 8) |
-                              (((uint32_t)ratebuff[2]) << 16) | (((uint32_t)ratebuff[3]) << 24));
+             transmit_rate =  ((((uint32_t)ratebuff[0])) | (((uint32_t)ratebuff[1]) << 8);
 
          }
 
