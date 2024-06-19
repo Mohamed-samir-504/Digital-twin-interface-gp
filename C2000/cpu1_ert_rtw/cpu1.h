@@ -60,6 +60,7 @@ extern void init_SCI_GPIO(void);
 #include "can_message.h"
 
 /* Block signals (default storage) */
+
 typedef struct {
   real_T kd;                           /* '<Root>/ready' */
   real_T reset;                        /* '<Root>/ready' */

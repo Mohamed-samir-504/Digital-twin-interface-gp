@@ -35,7 +35,10 @@
 #define cpu1_IN_state9                 (9U)
 
 uint32_T counter = 0;
-uint16_t transmit_rate = DEFAULT_TRASNMIT_RATE;
+uint32_t transmit_rate = DEFAULT_TRASNMIT_RATE;
+
+transmit_rate_union tr;
+
 #define READ_SWITCH() GpioDataRegs.GPBDAT.bit.GPIO61
 
 
@@ -1512,10 +1515,13 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
   /* S-Function (c280xcanxmt): '<Root>/eCAN Transmit' */
   {
       if(READ_SWITCH()){
+          //a counter to control the rate of transmit
           counter++;
+
           uint8_t ucTXMsgData[8];
 
           if(counter%transmit_rate==0){
+
               ucTXMsgData[0] = (cpu1_B.BytePack[0] & 0xFF);
               ucTXMsgData[1] = (cpu1_B.BytePack[0] >> 8);
               ucTXMsgData[2] = (cpu1_B.BytePack[1] & 0xFF);
@@ -1525,7 +1531,7 @@ void cpu1_step0(void)                  /* Sample time: [0.001s, 0.0s] */
               ucTXMsgData[6] = (cpu1_B.BytePack[3] & 0xFF);
               ucTXMsgData[7] = (cpu1_B.BytePack[3] >> 8);
 
-              CAN_sendMessage(CANB_BASE, 2, 8,(uint16_t *)ucTXMsgData);
+              CAN_sendMessage(CANB_BASE, TX_MSG_OBJ_ID, 8,(uint16_t *)ucTXMsgData);
           }
        }
 
@@ -2216,29 +2222,40 @@ void cpu1_step1(void)                  /* Sample time: [0.1s, 0.0s] */
 
         if(((HWREGH(CANB_BASE + CAN_O_ES) & CAN_ES_RXOK)) == CAN_ES_RXOK)
         {
-             //get data as uint16 in recBuff
+             //buffers to receive data in
              uint8_t recbuff[8];
-             uint8_t ratebuff[4];
+             uint8_t ratebuff[8];
 
              int16_T i;
+
              for (i = 0; i < 8; i++) {
                   recbuff[i] = 0;
-                  ratebuff[i]=0;
-
+                  ratebuff[i]= 0;
              }
 
-             CAN_readMessage(CANB_BASE, RX_MSG_OBJ1_ID, (uint16_T*)recbuff);
+             //if received message ID matches CAN_RECIEVE_SETPOINT_MSG_ID
+             if(CAN_readMessage(CANB_BASE, RX_MSG_OBJ1_ID, (uint16_T*)recbuff)){
 
-             CAN_readMessage(CANB_BASE, RX_MSG_OBJ2_ID, (uint16_T*)ratebuff);
+                 //receive data as float
+                 cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) |
+                           (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
+
+                 cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) |
+                           (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
+             }
+
+             //if received message ID matches CAN_RECIEVE_RATE_MSG_ID
+             if(CAN_readMessage(CANB_BASE, RX_MSG_OBJ2_ID, (uint16_T*)ratebuff)){
+
+                 //receive data as float
+                 tr = (transmit_rate_union) ((((uint32_t)ratebuff[0])) | (((uint32_t)ratebuff[1]) << 8) |
+                         (((uint32_t)ratebuff[2]) << 16) | (((uint32_t)ratebuff[3]) << 24));
+
+                 transmit_rate = (uint32_t)tr.f;
+             }
 
 
-             cpu1_B.SCIReceive[0] = (union type_uni) ((((uint32_t)recbuff[0])) | (((uint32_t)recbuff[1]) << 8) |
-                     (((uint32_t)recbuff[2]) << 16) | (((uint32_t)recbuff[3]) << 24));
 
-             cpu1_B.SCIReceive[1] = (union type_uni) ((((uint32_t)recbuff[4])) | (((uint32_t)recbuff[5]) << 8) |
-                     (((uint32_t)recbuff[6]) << 16) | (((uint32_t)recbuff[7]) << 24));
-
-             transmit_rate =  ((((uint32_t)ratebuff[0])) | (((uint32_t)ratebuff[1]) << 8);
 
          }
 
@@ -2487,6 +2504,7 @@ void cpu1_initialize(void)
     //set gpio61 as input pin
     GpioCtrlRegs.GPBDIR.bit.GPIO61 = 0;
 
+    tr.i = DEFAULT_TRASNMIT_RATE;
     EDIS;
 
     /* Start for S-Function (c280xgpio_di): '<S7>/Digital Input4' */
@@ -2509,7 +2527,7 @@ void cpu1_initialize(void)
     IPCInit(CHANNEL1, 1, 0);
 
     /* Start for S-Function (c280xcanxmt): '<Root>/eCAN Transmit' */
-    CAN_setupMessageObject(CANB_BASE, 2, 0x1C7, CAN_MSG_FRAME_STD,
+    CAN_setupMessageObject(CANB_BASE, TX_MSG_OBJ_ID, 0x1C7, CAN_MSG_FRAME_STD,
       CAN_MSG_OBJ_TYPE_TX, 0, CAN_MSG_OBJ_NO_FLAGS, MSG_DATA_LENGTH_TX);
 
     // for receiving steering and speed
